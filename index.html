@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Finanças 2027</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1d1e" media="(prefers-color-scheme: dark)">
+<style>
+:root{--bg:#f7f7f5;--surface:#fff;--raised:#f0f0ee;--line:#e2e2e3;--ink:#222323;--muted:#5b6063;--primary:#4270d1;--tint:#e4ebfa;--ok:#009e73;--okbg:#dff3ec;--warn:#e69f00;--warnbg:#fdf0d5;--bad:#d55e00;--badbg:#fbe3d6}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1d1e;--surface:#222323;--raised:#2f3334;--line:#3a3f40;--ink:#f2f3f3;--muted:#a5acaf;--primary:#7c9be6;--tint:#243558;--okbg:#10382d;--warnbg:#3d3010;--badbg:#42210c}}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h1{font-size:20px}
+button{font:inherit;border:0;border-radius:999px;padding:10px 16px;background:var(--raised);color:var(--ink);cursor:pointer}
+button.p{background:var(--primary);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:20px;margin-bottom:16px}
+.hero small{color:var(--muted)}
+.big{font-size:34px;font-weight:800;letter-spacing:-.5px;margin:4px 0}
+.bar{height:10px;border-radius:999px;background:var(--raised);overflow:hidden;margin:12px 0 8px}
+.bar i{display:block;height:100%;border-radius:999px}
+.pill{display:inline-block;border-radius:999px;padding:4px 12px;font-weight:700;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.m{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 10px;text-align:left;color:var(--ink)}
+.m.cur{outline:2px solid var(--primary)}
+.m b{display:block;font-size:13px;color:var(--muted)}
+.m span{font-size:18px;font-weight:700}
+.m em{display:block;font-style:normal;font-size:12px;font-weight:700;margin-top:2px}
+.dot{height:6px;border-radius:999px;margin-bottom:8px}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:16px}
+dialog{border:0;border-radius:24px;padding:20px;background:var(--surface);color:var(--ink);width:min(92vw,420px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input{width:100%;font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+</style>
+</head>
+<body>
+<header><h1>Finanças 2027</h1><button id="cfg" aria-label="Configurar">⚙</button></header>
+<main id="app"><p class="foot">Carregando…</p></main>
+<p class="foot" id="upd"></p>
+<dialog id="dlg"><form method="dialog">
+<h2 style="font-size:18px">Conexão</h2>
+<label for="url">URL do app da Web (termina em /exec)</label><input id="url" inputmode="url" autocomplete="off">
+<label for="key">Chave</label><input id="key" autocomplete="off">
+<div class="row"><button value="x">Cancelar</button><button class="p" value="ok" id="save">Salvar</button></div>
+</form></dialog>
+<script>
+var $=function(s){return document.querySelector(s)};
+var ST={ok:{ic:"✓",bg:"--okbg"},warn:{ic:"!",bg:"--warnbg"},bad:{ic:"✕",bg:"--badbg"}};
+function kind(c){c=(c||"").toLowerCase();return c==="#009e73"?"ok":c==="#e69f00"?"warn":"bad"}
+function brl(n){return n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+function pc(n){return (n*100).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%"}
+function cfg(){try{return JSON.parse(localStorage.getItem("fin27")||"{}")}catch(e){return{}}}
+function render(d,old){
+  var cur=d.meses.filter(function(m){return m.mes===d.mes_atual})[0]||d.meses[0];
+  var k=kind(cur.cor);
+  var h='<section class="hero"><small>'+cur.nome+' · mês atual</small>'+
+   '<div class="big">'+brl(cur.sobra)+'</div><small>de folga</small>'+
+   '<div class="bar"><i style="width:'+Math.min(100,cur.pct*100)+'%;background:'+cur.cor+'"></i></div>'+
+   '<span class="pill" style="background:var('+ST[k].bg+');color:'+cur.cor+'">'+ST[k].ic+' '+cur.situacao.replace(/^[^\s]+\s/,"")+' · '+pc(cur.pct)+'</span></section><div class="grid">';
+  d.meses.forEach(function(m){var kk=kind(m.cor);
+   h+='<div class="m'+(m.mes===cur.mes?' cur':'')+'"><div class="dot" style="background:'+m.cor+'"></div><b>'+m.nome.replace("./","/")+'</b><span>'+pc(m.pct)+'</span><em style="color:'+m.cor+'">'+ST[kk].ic+' '+m.situacao.replace(/^[^\s]+\s/,"")+'</em></div>'});
+  $("#app").innerHTML=h+"</div>";
+  var t=new Date(d.atualizado);$("#upd").textContent=(old?"Sem conexão · dados de ":"Atualizado ")+t.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+}
+function load(){
+  var c=cfg();
+  if(!c.url||!c.key){$("#app").innerHTML='<p class="foot">Toque em ⚙ e informe a URL e a chave.</p>';return}
+  fetch(c.url+(c.url.indexOf("?")<0?"?":"&")+"chave="+encodeURIComponent(c.key)).then(function(r){return r.json()}).then(function(d){
+    if(d.erro){$("#app").innerHTML='<p class="foot">Erro: '+d.erro+'</p>';return}
+    localStorage.setItem("fin27data",JSON.stringify(d));render(d,false)
+  }).catch(function(){
+    var s=localStorage.getItem("fin27data");
+    if(s)render(JSON.parse(s),true);else $("#app").innerHTML='<p class="foot">Sem conexão e sem dados salvos.</p>'
+  });
+}
+$("#cfg").onclick=function(){var c=cfg();$("#url").value=c.url||"";$("#key").value=c.key||"";$("#dlg").showModal()};
+$("#dlg").addEventListener("close",function(){if($("#dlg").returnValue==="ok"){localStorage.setItem("fin27",JSON.stringify({url:$("#url").value.trim(),key:$("#key").value.trim()}));load()}});
+document.addEventListener("visibilitychange",function(){if(!document.hidden)load()});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
+load();
+</script>
+</body>
+</html>
